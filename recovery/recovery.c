@@ -292,7 +292,7 @@ static int
 erase_volume(const char *volume) {
     ui_set_background(BACKGROUND_ICON_INSTALLING);
     ui_show_indeterminate_progress();
-    ui_print("Formatting %s...\n", volume);
+    ui_print("正在格式化 %s...\n", volume);
 
     ensure_path_unmounted(volume);
 
@@ -398,8 +398,8 @@ copy_sideloaded_package(const char* original_path) {
 
 static char**
 prepend_title(const char** headers) {
-    char* title[] = { "Android system recovery <"
-                          EXPAND(RECOVERY_API_VERSION) "e>" __DATE__" "__TIME__,
+    char* title[] = { "8宝系统恢复模式 <"
+                          EXPAND(RECOVERY_API_VERSION) "e>",
                       "",
                       NULL };
 
@@ -480,7 +480,7 @@ update_directory(const char* path, const char* unmount_when_done,
                  int* wipe_cache) {
     ensure_path_mounted(path);
 
-    const char* MENU_HEADERS[] = { "Choose a package to install:",
+    const char* MENU_HEADERS[] = { "选择更新包:",
                                    path,
                                    "",
                                    NULL };
@@ -576,7 +576,7 @@ update_directory(const char* path, const char* unmount_when_done,
             strlcat(new_path, "/", PATH_MAX);
             strlcat(new_path, item, PATH_MAX);
 
-            ui_print("\n-- Install %s ...\n", path);
+            ui_print("\n-- 安装 %s 中更新包...\n", path);
             set_sdcard_update_bootloader_message();
             char* copy = copy_sideloaded_package(new_path);
             if (unmount_when_done != NULL) {
@@ -609,24 +609,24 @@ wipe_data(int confirm) {
         static char** title_headers = NULL;
 
         if (title_headers == NULL) {
-            char* headers[] = { "Confirm wipe of all user data?",
-                                "  THIS CAN NOT BE UNDONE.",
+            char* headers[] = { "确定要清除所有用户数据",
+                                "  清除后不能恢复!",
                                 "",
                                 NULL };
             title_headers = prepend_title((const char**)headers);
         }
 
-        char* items[] = { " No",
-                          " No",
-                          " No",
-                          " No",
-                          " No",
-                          " No",
-                          " N你好世界o",
-                          " Yes -- delete all user data",   // [7]
-                          " No",
-                          " No",
-                          " No",
+        char* items[] = { " 否",
+                          " 否",
+                          " 否",
+                          " 否",
+                          " 否",
+                          " 否",
+                          " 否",
+                          " 是 -- 清除所有用户数据",   // [7]
+                          " 否",
+                          " 否",
+                          " 否",
                           NULL };
 
         int chosen_item = get_menu_selection(title_headers, items, 1, 0);
@@ -635,11 +635,11 @@ wipe_data(int confirm) {
         }
     }
 
-    ui_print("\n-- Wiping data...\n");
+    ui_print("\n-- 清除数据...\n");
     device_wipe_data();
     erase_volume("/data");
     erase_volume("/cache");
-    ui_print("Data wipe complete.\n");
+    ui_print("数据清除完成.\n");
 }
 
 static void
@@ -669,9 +669,9 @@ prompt_and_wait() {
                 break;
 
             case ITEM_WIPE_CACHE:
-                ui_print("\n-- Wiping cache...\n");
+                ui_print("\n-- 清除缓存...\n");
                 erase_volume("/cache");
-                ui_print("Cache wipe complete.\n");
+                ui_print("缓存清除完成.\n");
                 if (!ui_text_visible()) return;
                 break;
 
@@ -680,19 +680,19 @@ prompt_and_wait() {
                 if (status == INSTALL_SUCCESS && wipe_cache) {
                     ui_print("\n-- Wiping cache (at package request)...\n");
                     if (erase_volume("/cache")) {
-                        ui_print("Cache wipe failed.\n");
+                        ui_print("缓存清除失败.\n");
                     } else {
-                        ui_print("Cache wipe complete.\n");
+                        ui_print("缓存清除完成.\n");
                     }
                 }
                 if (status >= 0) {
                     if (status != INSTALL_SUCCESS) {
                         ui_set_background(BACKGROUND_ICON_ERROR);
-                        ui_print("Installation aborted.\n");
+                        ui_print("安装更新被中断.\n");
                     } else if (!ui_text_visible()) {
                         return;  // reboot if logs aren't visible
                     } else {
-                        ui_print("\nInstall from sdcard complete.\n");
+                        ui_print("\n从sdcard中升级完成.\n");
                     }
                 }
                 break;
@@ -702,19 +702,19 @@ prompt_and_wait() {
                 if (status == INSTALL_SUCCESS && wipe_cache) {
                     ui_print("\n-- Wiping cache (at package request)...\n");
                     if (erase_volume("/cache")) {
-                        ui_print("Cache wipe failed.\n");
+                        ui_print("缓存清除失败.\n");
                     } else {
-                        ui_print("Cache wipe complete.\n");
+                        ui_print("缓存清除完成.\n");
                     }
                 }
                 if (status >= 0) {
                     if (status != INSTALL_SUCCESS) {
                         ui_set_background(BACKGROUND_ICON_ERROR);
-                        ui_print("Installation aborted.\n");
+                        ui_print("安装更新被中断.\n");
                     } else if (!ui_text_visible()) {
                         return;  // reboot if logs aren't visible
                     } else {
-                        ui_print("\nInstall from cache complete.\n");
+                        ui_print("\n从缓存中升级完成.\n");
                     }
                 }
                 break;
@@ -799,15 +799,15 @@ main(int argc, char **argv) {
                 LOGE("Cache wipe (requested by package) failed.");
             }
         }
-        if (status != INSTALL_SUCCESS) ui_print("Installation aborted.\n");
+        if (status != INSTALL_SUCCESS) ui_print("安装更新被中断.\n");
     } else if (wipe_data) {
         if (device_wipe_data()) status = INSTALL_ERROR;
         if (erase_volume("/data")) status = INSTALL_ERROR;
         if (wipe_cache && erase_volume("/cache")) status = INSTALL_ERROR;
-        if (status != INSTALL_SUCCESS) ui_print("Data wipe failed.\n");
+        if (status != INSTALL_SUCCESS) ui_print("数据清除失败.\n");
     } else if (wipe_cache) {
         if (wipe_cache && erase_volume("/cache")) status = INSTALL_ERROR;
-        if (status != INSTALL_SUCCESS) ui_print("Cache wipe failed.\n");
+        if (status != INSTALL_SUCCESS) ui_print("缓存清除失败.\n");
     } else {
         status = INSTALL_ERROR;  // No command specified
     }
@@ -819,7 +819,7 @@ main(int argc, char **argv) {
 
     // Otherwise, get ready to boot the main system...
     finish_recovery(send_intent);
-    ui_print("Rebooting...\n");
+    ui_print("系统重启中...\n");
     android_reboot(ANDROID_RB_RESTART, 0, 0);
     return EXIT_SUCCESS;
 }
