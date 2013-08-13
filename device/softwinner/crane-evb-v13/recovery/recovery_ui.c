@@ -25,15 +25,15 @@
 #define KEY_ENTER			28
 
 
-char* MENU_HEADERS[] = { "Android system recovery utility (EVB-V13: vol up/vol down, home, enter)",
+char* MENU_HEADERS[] = { "8宝系统恢复工具(EVB-V13: 上下键选择，回车键确定)",
                          "",
                          NULL };
 
-char* MENU_ITEMS[] = { "reboot system now",
-                       "apply update from external storage",
-                       "wipe data/factory reset",
-                       "wipe cache partition",
-                       "apply update from cache",
+char* MENU_ITEMS[] = { "立即重启系统",
+                       "升级外部存储设备中的更新包",
+                       "清空数据/恢复出厂",
+                       "清除缓存分区",
+                       "升级缓存中的更新包",
                        NULL };
 
 void device_ui_init(UIParameters* ui_parameters) {
