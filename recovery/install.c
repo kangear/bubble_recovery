@@ -51,7 +51,7 @@ try_update_binary(const char *path, ZipArchive *zip, int* wipe_cache) {
     int fd = creat(binary, 0755);
     if (fd < 0) {
         mzCloseZipArchive(zip);
-        LOGE("Can't make %s\n", binary);
+        LOGE("制作 %s 失败\n", binary);
         return INSTALL_ERROR;
     }
     bool ok = mzExtractZipEntryToFile(zip, binary_entry, fd);
@@ -59,7 +59,7 @@ try_update_binary(const char *path, ZipArchive *zip, int* wipe_cache) {
     mzCloseZipArchive(zip);
 
     if (!ok) {
-        LOGE("Can't copy %s\n", ASSUMED_UPDATE_BINARY_NAME);
+        LOGE("拷贝 %s失败\n", ASSUMED_UPDATE_BINARY_NAME);
         return INSTALL_ERROR;
     }
 
@@ -184,7 +184,7 @@ load_keys(const char* filename, int* numKeys) {
 
     FILE* f = fopen(filename, "r");
     if (f == NULL) {
-        LOGE("opening %s: %s\n", filename, strerror(errno));
+        LOGE("打开 %s　失败: %s\n", filename, strerror(errno));
         goto exit;
     }
 
@@ -199,7 +199,7 @@ load_keys(const char* filename, int* numKeys) {
             goto exit;
         }
         if (key->len != RSANUMWORDS) {
-            LOGE("key length (%d) does not match expected size\n", key->len);
+            LOGE("签名长度 (%d) 不符合\n", key->len);
             goto exit;
         }
         for (i = 1; i < key->len; ++i) {
@@ -222,7 +222,7 @@ load_keys(const char* filename, int* numKeys) {
                 break;
 
             default:
-                LOGE("unexpected character between keys\n");
+                LOGE("签名之间字符异常\n");
                 goto exit;
         }
     }
@@ -241,27 +241,27 @@ static int
 really_install_package(const char *path, int* wipe_cache)
 {
     ui_set_background(BACKGROUND_ICON_INSTALLING);
-    ui_print("Finding update package...\n");
+    ui_print("正在查找更新包...\n");
     ui_show_indeterminate_progress();
     LOGI("Update location: %s\n", path);
 
     if (ensure_path_mounted(path) != 0) {
-        LOGE("Can't mount %s\n", path);
+        LOGE("挂载%s\n失败", path);
         return INSTALL_CORRUPT;
     }
 
-    ui_print("Opening update package...\n");
+    ui_print("正在打开更新包...\n");
 
     int numKeys;
     RSAPublicKey* loadedKeys = load_keys(PUBLIC_KEYS_FILE, &numKeys);
     if (loadedKeys == NULL) {
-        LOGE("Failed to load keys\n");
+        LOGE("获取签名失败\n");
         return INSTALL_CORRUPT;
     }
     LOGI("%d key(s) loaded from %s\n", numKeys, PUBLIC_KEYS_FILE);
 
     // Give verification half the progress bar...
-    ui_print("Verifying update package...\n");
+    ui_print("校验更新包签名...\n");
     ui_show_progress(
             VERIFICATION_PROGRESS_FRACTION,
             VERIFICATION_PROGRESS_TIME);
@@ -271,7 +271,7 @@ really_install_package(const char *path, int* wipe_cache)
     free(loadedKeys);
     LOGI("verify_file returned %d\n", err);
     if (err != VERIFY_SUCCESS) {
-        LOGE("signature verification failed\n");
+        LOGE("签名验证失败\n");
         return INSTALL_CORRUPT;
     }
 
@@ -280,13 +280,13 @@ really_install_package(const char *path, int* wipe_cache)
     ZipArchive zip;
     err = mzOpenZipArchive(path, &zip);
     if (err != 0) {
-        LOGE("Can't open %s\n(%s)\n", path, err != -1 ? strerror(err) : "bad");
+        LOGE("打开%s失败\n(%s)\n", path, err != -1 ? strerror(err) : "已损坏");
         return INSTALL_CORRUPT;
     }
 
     /* Verify and install the contents of the package.
      */
-    ui_print("Installing update...\n");
+    ui_print("正在安装更新包...\n");
     return try_update_binary(path, &zip, wipe_cache);
 }
 
@@ -298,7 +298,7 @@ install_package(const char* path, int* wipe_cache, const char* install_file)
         fputs(path, install_log);
         fputc('\n', install_log);
     } else {
-        LOGE("failed to open last_install: %s\n", strerror(errno));
+        LOGE("打开最后一次安装失败: %s\n", strerror(errno));
     }
     int result = really_install_package(path, wipe_cache);
     if (install_log) {
