@@ -399,7 +399,7 @@ copy_sideloaded_package(const char* original_path) {
 static char**
 prepend_title(const char** headers) {
     char* title[] = { "Android system recovery <"
-                          EXPAND(RECOVERY_API_VERSION) "e>",
+                          EXPAND(RECOVERY_API_VERSION) "e>" __DATE__" "__TIME__,
                       "",
                       NULL };
 
@@ -622,7 +622,7 @@ wipe_data(int confirm) {
                           " No",
                           " No",
                           " No",
-                          " No",
+                          " N你好世界o",
                           " Yes -- delete all user data",   // [7]
                           " No",
                           " No",

@@ -30,8 +30,10 @@
 
 #include <pixelflinger/pixelflinger.h>
 
-#include "font_10x18.h"
+#include "font_10x18_cn.h"
 #include "minui.h"
+
+const unsigned cw_en=10;
 
 #if defined(RECOVERY_BGRA)
 #define PIXEL_FORMAT GGL_PIXEL_FORMAT_BGRA_8888
@@ -208,11 +210,33 @@ void gr_font_size(int *x, int *y)
     *y = gr_font->cheight;
 }
 
+int getGBCharID(unsigned c1, unsigned c2)
+{
+	if (c1 >= 0xB0 && c1 <=0xF7 && c2>=0xA1 && c2<=0xFE)
+	{
+		return (c1-0xB0)*94+c2-0xA1;
+	}
+	return -1;
+}
+
+int getUNICharID(unsigned short unicode)
+{
+	int i;
+	for (i = 0; i < UNICODE_NUM; i++) {
+		if (unicode == unicodemap[i]) return i;
+	}
+	return -1;
+}
+
 int gr_text(int x, int y, const char *s)
 {
     GGLContext *gl = gr_context;
     GRFont *font = gr_font;
     unsigned off;
+	unsigned off2;
+	unsigned off3;
+	int id;
+	unsigned short unicode;
 
     y -= font->ascent;
 
@@ -223,12 +247,39 @@ int gr_text(int x, int y, const char *s)
     gl->enable(gl, GGL_TEXTURE_2D);
 
     while((off = *s++)) {
-        off -= 32;
-        if (off < 96) {
-            gl->texCoord2i(gl, (off * font->cwidth) - x, 0 - y);
-            gl->recti(gl, x, y, x + font->cwidth, y + font->cheight);
-        }
-        x += font->cwidth;
+		if (off < 0x80)
+		{
+		    off -= 32;
+		    if (off < 96) {
+				if ((x + cw_en) >= gr_fb_width()) return x;
+		        gl->texCoord2i(gl, (off * font->cwidth) - x, 0 - y);
+		        gl->recti(gl, x, y, x + cw_en, y + font->cheight);
+		    }
+		    x += cw_en;
+		}
+		else
+		{
+			if ((off & 0xF0) == 0xE0)
+			{
+				off2 = *s++;
+				off3 = *s++;
+				unicode = (off & 0x1F) << 12;
+				unicode |= (off2 & 0x3F) << 6;
+				unicode |= (off3 & 0x3F);
+				id = getUNICharID(unicode);
+				//LOGI("%X %X %X  %X  %d", off, off2, off3, unicode, id);
+				if (id >= 0) {
+					if ((x + font->cwidth) >= gr_fb_width()) return x;
+				    gl->texCoord2i(gl, ((id % 96) * font->cwidth) - x, (id / 96 + 1) * font->cheight - y);
+				    gl->recti(gl, x, y, x + font->cwidth, y + font->cheight);
+				    x += font->cwidth;
+				} else {
+				    x += font->cwidth;
+				}
+			} else {
+			    x += cw_en;
+			}
+		}
     }
 
     return x;
