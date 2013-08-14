@@ -36,7 +36,7 @@ int verify_file(const char* path, const RSAPublicKey *pKeys, unsigned int numKey
 
     FILE* f = fopen(path, "rb");
     if (f == NULL) {
-        LOGE("failed to open %s (%s)\n", path, strerror(errno));
+        LOGE("打开 %s 失败 (%s)\n", path, strerror(errno));
         return VERIFY_FAILURE;
     }
 
@@ -52,14 +52,14 @@ int verify_file(const char* path, const RSAPublicKey *pKeys, unsigned int numKey
 #define FOOTER_SIZE 6
 
     if (fseek(f, -FOOTER_SIZE, SEEK_END) != 0) {
-        LOGE("failed to seek in %s (%s)\n", path, strerror(errno));
+        LOGE("在%s中索引失败 (%s)\n", path, strerror(errno));
         fclose(f);
         return VERIFY_FAILURE;
     }
 
     unsigned char footer[FOOTER_SIZE];
     if (fread(footer, 1, FOOTER_SIZE, f) != FOOTER_SIZE) {
-        LOGE("failed to read footer from %s (%s)\n", path, strerror(errno));
+        LOGE("从 %s 读取页脚失败 (%s)\n", path, strerror(errno));
         fclose(f);
         return VERIFY_FAILURE;
     }
@@ -76,7 +76,7 @@ int verify_file(const char* path, const RSAPublicKey *pKeys, unsigned int numKey
 
     if (signature_start - FOOTER_SIZE < RSANUMBYTES) {
         // "signature" block isn't big enough to contain an RSA block.
-        LOGE("signature is too short\n");
+        LOGE("签名长度不够\n");
         fclose(f);
         return VERIFY_FAILURE;
     }
@@ -88,7 +88,7 @@ int verify_file(const char* path, const RSAPublicKey *pKeys, unsigned int numKey
     size_t eocd_size = comment_size + EOCD_HEADER_SIZE;
 
     if (fseek(f, -eocd_size, SEEK_END) != 0) {
-        LOGE("failed to seek in %s (%s)\n", path, strerror(errno));
+        LOGE("在 %s 中索引失败(%s)\n", path, strerror(errno));
         fclose(f);
         return VERIFY_FAILURE;
     }
@@ -101,12 +101,12 @@ int verify_file(const char* path, const RSAPublicKey *pKeys, unsigned int numKey
 
     unsigned char* eocd = malloc(eocd_size);
     if (eocd == NULL) {
-        LOGE("malloc for EOCD record failed\n");
+        LOGE("为EOCD申请内存失败\n");
         fclose(f);
         return VERIFY_FAILURE;
     }
     if (fread(eocd, 1, eocd_size, f) != eocd_size) {
-        LOGE("failed to read eocd from %s (%s)\n", path, strerror(errno));
+        LOGE(" 从 %s 中读取eocd失败(%s)\n", path, strerror(errno));
         fclose(f);
         return VERIFY_FAILURE;
     }
@@ -115,7 +115,7 @@ int verify_file(const char* path, const RSAPublicKey *pKeys, unsigned int numKey
     // magic number $50 $4b $05 $06.
     if (eocd[0] != 0x50 || eocd[1] != 0x4b ||
         eocd[2] != 0x05 || eocd[3] != 0x06) {
-        LOGE("signature length doesn't match EOCD marker\n");
+        LOGE("签名长度不匹配EOCD标记\n");
         fclose(f);
         return VERIFY_FAILURE;
     }
@@ -128,7 +128,7 @@ int verify_file(const char* path, const RSAPublicKey *pKeys, unsigned int numKey
             // the real one, minzip will find the later (wrong) one,
             // which could be exploitable.  Fail verification if
             // this sequence occurs anywhere after the real one.
-            LOGE("EOCD marker occurs after start of EOCD\n");
+            LOGE("EOCD后再次发现EOCD标记\n");
             fclose(f);
             return VERIFY_FAILURE;
         }
@@ -140,7 +140,7 @@ int verify_file(const char* path, const RSAPublicKey *pKeys, unsigned int numKey
     SHA_init(&ctx);
     unsigned char* buffer = malloc(BUFFER_SIZE);
     if (buffer == NULL) {
-        LOGE("failed to alloc memory for sha1 buffer\n");
+        LOGE("为sha1 buffer申请内存失败\n");
         fclose(f);
         return VERIFY_FAILURE;
     }
@@ -152,7 +152,7 @@ int verify_file(const char* path, const RSAPublicKey *pKeys, unsigned int numKey
         int size = BUFFER_SIZE;
         if (signed_len - so_far < size) size = signed_len - so_far;
         if (fread(buffer, 1, size, f) != size) {
-            LOGE("failed to read data from %s (%s)\n", path, strerror(errno));
+            LOGE("从 %s 中读到数据失败(%s)\n", path, strerror(errno));
             fclose(f);
             return VERIFY_FAILURE;
         }
@@ -179,6 +179,6 @@ int verify_file(const char* path, const RSAPublicKey *pKeys, unsigned int numKey
         }
     }
     free(eocd);
-    LOGE("failed to verify whole-file signature\n");
+    LOGE("整个文件签名验证失败\n");
     return VERIFY_FAILURE;
 }
